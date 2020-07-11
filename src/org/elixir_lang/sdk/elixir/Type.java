@@ -61,8 +61,7 @@ public class Type extends org.elixir_lang.sdk.erlang_dependent.Type {
     private static final Set<String> SDK_HOME_CHILD_BASE_NAME_SET = new THashSet<>(Arrays.asList("lib", "src"));
     private static final String WINDOWS_32BIT_DEFAULT_HOME_PATH = "C:\\Program Files\\Elixir";
     private static final String WINDOWS_64BIT_DEFAULT_HOME_PATH = "C:\\Program Files (x86)\\Elixir";
-    private final Map<String, Release> mySdkHomeToReleaseCache =
-            ApplicationManager.getApplication().isUnitTestMode() ? new HashMap<>() : new WeakHashMap<>();
+    private final Map<String, Release> mySdkHomeToReleaseCache = new WeakHashMap<>();
 
     public Type() {
         super(SerializerExtension.ELIXIR_SDK_TYPE_ID);
@@ -329,16 +328,21 @@ public class Type extends org.elixir_lang.sdk.erlang_dependent.Type {
     }
 
     public static SdkType erlangSdkType(@NotNull ProjectJdkTable projectJdkTable) {
-        SdkType erlangSdkType;
+        SdkType erlangSdkType = null;
 
         if (isSmallIde()) {
             /* intellij-erlang's "Erlang SDK" does not work in small IDEs because it uses JavadocRoot for documentation,
                which isn't available in Small IDEs. */
             erlangSdkType = SdkType.findInstance(org.elixir_lang.sdk.erlang.Type.class);
         } else {
-            erlangSdkType = (SdkType) projectJdkTable.getSdkTypeByName("Erlang SDK");
+            for (SdkType sdkType : SdkType.EP_NAME.getExtensionList()) {
+                if (sdkType.getName().equals("Erlang SDK")) {
+                   erlangSdkType = sdkType;
+                   break;
+                }
+            }
 
-            if (erlangSdkType instanceof UnknownSdkType) {
+            if (erlangSdkType == null) {
                 erlangSdkType = SdkType.findInstance(org.elixir_lang.sdk.erlang.Type.class);
             }
         }
